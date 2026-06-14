@@ -1,6 +1,6 @@
 /**
  * @file src/health/interfaces/health.interface.ts
- * @description Type definitions for the health check response.
+ * @description Pure data shapes for the health module. No logic, no dependencies.
  */
 
 export interface DatabaseHealth {
