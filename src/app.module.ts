@@ -8,21 +8,20 @@ import { ConfigModule } from '@nestjs/config';
 import appConfig from './config/app.config';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    // ConfigModule is global — no need to import it in every feature module
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
       envFilePath: '.env',
     }),
-
-    // Database connection
     DatabaseModule,
-
-    // Feature modules
     HealthModule,
+    UserModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

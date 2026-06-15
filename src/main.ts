@@ -1,12 +1,14 @@
 /**
  * @file src/main.ts
  * @description Application bootstrap.
- * Configures CORS, global API prefix, response interceptor, and exception filter.
+ * Configures CORS, cookie-parser, global prefix, interceptors, and filters.
  */
 
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
@@ -20,7 +22,14 @@ async function bootstrap() {
   const frontendUrl = configService.get<string>('frontendUrl') ?? 'http://localhost:3000';
 
   // ---------------------------------------------------------------------------
-  // CORS — allow only the configured frontend origin
+  // Cookie parser — must be registered BEFORE CORS and routes
+  // Allows req.cookies to be populated in controllers and strategies
+  // ---------------------------------------------------------------------------
+  app.use(cookieParser());
+
+  // ---------------------------------------------------------------------------
+  // CORS — allow only the configured frontend origin with credentials
+  // credentials: true is required for HTTP-only cookies to be sent cross-origin
   // ---------------------------------------------------------------------------
   app.enableCors({
     origin: frontendUrl,
@@ -30,29 +39,25 @@ async function bootstrap() {
   });
 
   // ---------------------------------------------------------------------------
-  // Global prefix — all routes are served under /api
+  // Global prefix
   // ---------------------------------------------------------------------------
   app.setGlobalPrefix('api');
 
   // ---------------------------------------------------------------------------
-  // Global pipes — validate and transform request DTOs
+  // Global validation pipe
   // ---------------------------------------------------------------------------
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,       // strip unknown properties
+      whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true,       // auto-transform payloads to DTO class instances
+      transform: true,
     }),
   );
 
   // ---------------------------------------------------------------------------
-  // Global interceptor — wrap all responses in { success, message, data }
+  // Global interceptor + exception filter
   // ---------------------------------------------------------------------------
   app.useGlobalInterceptors(new ResponseInterceptor());
-
-  // ---------------------------------------------------------------------------
-  // Global exception filter — format all errors consistently
-  // ---------------------------------------------------------------------------
   app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(port);
